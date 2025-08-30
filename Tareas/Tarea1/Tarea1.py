@@ -71,9 +71,47 @@ def individuos_decodificados(M,a1,b1,a2,b2,bits_necesaios):
         x = decodificacion(a1,b1,bits_izquierdo,n)
         y = decodificacion(a2,b2,bits_derecho,m)
 
-        parejas_individuos.append([x,y])
+        item = {
+            "cromosoma": individuo, 
+            "x":x,
+            "y":y,
+            "fitness": None
+        }
+
+        parejas_individuos.append( item )
 
     return parejas_individuos
+
+
+# ======================================= FUNCIONES A PROBAR =======================================
+
+
+def esfera(x):
+    return np.sum(np.square(x))   # x es un vector (np.array), válido para n=2 o n=5
+
+
+def bukin(x, y):
+    return 100 * np.sqrt(np.abs(y - 0.01 * x**2)) + 0.01 * np.abs(x + 10)
+
+
+def himmelblau(x, y):
+    return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
+
+
+def eggholder(x, y):
+    return -(y + 47) * np.sin(np.sqrt(np.abs(x/2 + (y + 47)))) \
+           - x * np.sin(np.sqrt(np.abs(x - (y + 47))))
+
+
+def easom(x, y):
+    return -np.cos(x) * np.cos(y) * np.exp(-((x - np.pi)**2 + (y - np.pi)**2))
+
+
+# ======================================= Evaluación de individuos =======================================
+
+
+
+
 
 
 # ======================================= Ejecución del Programa =======================================
@@ -91,16 +129,57 @@ valores = valores_a_representar(precision, longitudes)     # pasos por variable 
 bits = bits_necesarios(valores)                            # bits por variable
 
 M = 10
-resultado = individuos_decodificados(M, a1, b1, a2, b2, bits)
+individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
 
 
-print("Rangos:", variables_rango)
-print("Longitudes:", longitudes)
-print("Pasos (aprox):", valores)
-print("Bits por variable:", bits)
-print("Individuos decodificados:")
-for par in resultado:
-    print(par)
-    # Puedes verificar los rangos:
-    assert a1 <= par[0] <= b1
-    assert a2 <= par[1] <= b2
+def f(x,y):
+    return x + y
+
+
+def evaluar_poblacion(individuos, f):
+    """
+    individuos: es un una lista donde cada elemento es de la forma:
+        item = {
+            "cromosoma": individuo, 
+            "x":x,
+            "y":y,
+            "fitness": None (porque no se ha hecho una evaluación hasta el momento)
+        }
+    f: funcion a evaluar, función de dos variables
+    """
+    M = len(individuos)
+    for i in range(M):
+        x = individuos[i]["x"]
+        y = individuos[i]["y"]
+        individuos[i]["fitness"] = f(x,y)
+    return individuos
+
+
+def fitness_total(individuos_evaluados):
+    """
+    individuos_evaluados: es un una lista donde cada elemento es de la forma:
+        item = {
+            "cromosoma": individuo, 
+            "x":x,
+            "y":y,
+            "fitness": f(x,y) (ya se ha hecho la evaluación de la función)
+        }
+    """
+    M = len(individuos_evaluados)
+    fitness_total = 0
+    
+    for i in range(M):
+        fitness = individuos_evaluados[i]["fitness"] 
+        fitness_total += fitness
+    
+    return fitness_total
+
+
+
+results = evaluar_poblacion(individuos)
+
+print(results)
+
+fitness_total = fitness_total(results)
+
+print(fitness_total)
