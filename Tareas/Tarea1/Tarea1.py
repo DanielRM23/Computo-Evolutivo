@@ -217,32 +217,36 @@ def formar_parejas(individuos_seleccionados):
     return parejas
 
 
-
-# --- Operadores genéticos (añadir) ---
-
-def cruce_1punto(crom_a, crom_b):
+def cruce_1punto(cromosoma_a, cromosoma_b):
     """Cruce de 1 punto sobre dos listas de bits del mismo largo."""
-    N = len(crom_a)
+    N = len(cromosoma_a)
     if N < 2:
-        return crom_a[:], crom_b[:]
+        return cromosoma_a[:], cromosoma_b[:]
     c = random.randint(1, N-1)  # este es el punto de corte
-    h1 = crom_a[:c] + crom_b[c:]
-    h2 = crom_b[:c] + crom_a[c:]
+    h1 = cromosoma_a[:c] + cromosoma_b[c:]
+    h2 = cromosoma_b[:c] + cromosoma_a[c:]
     return h1, h2
 
 
-def mutacion_bitflip(crom, p_mut):
-    """Mutación por bit-flip independiente con prob p_mut."""
-    return [1-b if random.random() < p_mut else b for b in crom]
+def mutacion(crom, p_mut):
+    """
+    Mutación por bit independiente con prob p_mut.
+    - Recorre cada bit b de 'crom'
+    - Con probabilidad p_mut, lo voltea (0↔1); si no, lo mantiene.
+    """
+    return [
+        (1 - b) if random.random() < p_mut else b
+        for b in crom
+    ]
 
 
-def construir_individuo_desde_crom(crom, a1,b1,a2,b2, n, m):
+def construir_individuo_desde_cromosoma(cromosoma, a1,b1,a2,b2, n, m):
     """Parte el cromosoma en (n|m), decodifica x,y y arma el dict item."""
-    bits_izq = crom[:n]
-    bits_der = crom[n:n+m]
+    bits_izq = cromosoma[:n]
+    bits_der = cromosoma[n:n+m]
     x = decodificacion(a1,b1,bits_izq,n)
     y = decodificacion(a2,b2,bits_der,m)
-    return {"cromosoma": crom, "x": x, "y": y, "fitness": None}
+    return {"cromosoma": cromosoma, "x": x, "y": y, "fitness": None}
 
 
 # ======================================= Ejecución del Programa =======================================
@@ -281,10 +285,10 @@ def AG_Simple(variables_rango,
         for p in parejas:
             c1, c2 = p[0]["cromosoma"], p[1]["cromosoma"]
             h1, h2 = cruce_1punto(c1, c2) if random.random() < p_cruce else (c1[:], c2[:])
-            h1 = mutacion_bitflip(h1, p_mut)
-            h2 = mutacion_bitflip(h2, p_mut)
-            hijos.append(construir_individuo_desde_crom(h1, a1, b1, a2, b2, n, m))
-            hijos.append(construir_individuo_desde_crom(h2, a1, b1, a2, b2, n, m))
+            h1 = mutacion(h1, p_mut)
+            h2 = mutacion(h2, p_mut)
+            hijos.append(construir_individuo_desde_cromosoma(h1, a1, b1, a2, b2, n, m))
+            hijos.append(construir_individuo_desde_cromosoma(h2, a1, b1, a2, b2, n, m))
 
         hijos = evaluar_poblacion(hijos, f)
 
