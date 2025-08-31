@@ -109,29 +109,6 @@ def easom(x, y):
 
 # ======================================= Evaluación de individuos =======================================
 
-
-
-
-
-
-# ======================================= Ejecución del Programa =======================================
-
-variables_rango = [[-3.0, 12.1],
-                   [ 4.1,  5.8]]
-
-a1, b1 = variables_rango[0]
-a2, b2 = variables_rango[1]
-
-longitudes = longitud(variables_rango)
-precision = 4
-
-valores = valores_a_representar(precision, longitudes)     # pasos por variable (aprox)
-bits = bits_necesarios(valores)                            # bits por variable
-
-M = 10
-individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
-
-
 def f(x,y):
     return x + y
 
@@ -155,31 +132,61 @@ def evaluar_poblacion(individuos, f):
     return individuos
 
 
-def fitness_total(individuos_evaluados):
-    """
-    individuos_evaluados: es un una lista donde cada elemento es de la forma:
-        item = {
-            "cromosoma": individuo, 
-            "x":x,
-            "y":y,
-            "fitness": f(x,y) (ya se ha hecho la evaluación de la función)
-        }
-    """
-    M = len(individuos_evaluados)
-    fitness_total = 0
-    
-    for i in range(M):
-        fitness = individuos_evaluados[i]["fitness"] 
-        fitness_total += fitness
-    
-    return fitness_total
+# ======================================= Selección de individuos =======================================
 
 
 
-results = evaluar_poblacion(individuos)
+def calculo_probas(individuos_evaluados):
+    f = np.array([ind["fitness"] for ind in individuos_evaluados], dtype=float)
+    g = f - f.min()                  # g ≥ 0
+    f_inverted = 1.0 / (1.0 + g)            # aptitudes positivas
+    suma_total  = f_inverted.sum()
+    probas = f_inverted / suma_total if suma_total > 0 else np.ones_like(f_inverted)/len(f_inverted)
+    return probas
 
-print(results)
 
-fitness_total = fitness_total(results)
+def seleccion_ruleta(poblacion, probas, k):
+    # poblacion: lista de individuos (p. ej., dicts con "cromosoma", "x", "y", "fitness")
+    # probas: arreglo 1D de probabilidades (mismo tamaño que 'poblacion'), suma ≈ 1
+    # k: número de individuos a seleccionar (tamaño del mating pool)
 
-print(fitness_total)
+    # Elegimos 'k' índices de 0..len(poblacion)-1 según la distribución 'probas'.
+    # replace=False ⇒ sin reemplazo: un mismo individuo no puede ser seleccionado dos veces.
+    # OJO: con replace=False debe cumplirse k <= len(poblacion).
+    idxs = np.random.choice(len(poblacion), size=k, p=probas, replace=False)
+
+    # Construimos la lista de individuos seleccionados usando los índices obtenidos.
+    seleccion = [poblacion[i] for i in idxs]
+
+    # Devolvemos la selección (mating pool) y los índices elegidos (útiles para depurar o registrar).
+    return seleccion, idxs
+
+
+
+# ======================================= Ejecución del Programa =======================================
+
+variables_rango = [[-3.0, 12.1],
+                   [ 4.1,  5.8]]
+
+a1, b1 = variables_rango[0]
+a2, b2 = variables_rango[1]
+
+longitudes = longitud(variables_rango)
+precision = 4
+
+valores = valores_a_representar(precision, longitudes)     # pasos por variable (aprox)
+bits = bits_necesarios(valores)                            # bits por variable
+
+M = 10
+individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
+
+
+individuos_evaluados = evaluar_poblacion(individuos, f)
+
+k = len(individuos_evaluados)
+
+probas = calculo_probas(individuos_evaluados)
+
+
+aaaaa = seleccion_ruleta(individuos_evaluados, probas, k=k)
+print(aaaaa)
