@@ -19,7 +19,7 @@ def valores_a_representar(precision, longitudes):
 
 
 def bits_necesarios(valores):
-    return [np.floor(np.log2(i)+1) for i in valores]
+    return [int(np.ceil(np.log2(v))) for v in valores]
 
 
 def suma_bits(bits_necesarios):
@@ -83,35 +83,7 @@ def individuos_decodificados(M,a1,b1,a2,b2,bits_necesaios):
     return parejas_individuos
 
 
-# ======================================= FUNCIONES A PROBAR =======================================
-
-
-def esfera(x):
-    return np.sum(np.square(x))   # x es un vector (np.array), válido para n=2 o n=5
-
-
-def bukin(x, y):
-    return 100 * np.sqrt(np.abs(y - 0.01 * x**2)) + 0.01 * np.abs(x + 10)
-
-
-def himmelblau(x, y):
-    return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
-
-
-def eggholder(x, y):
-    return -(y + 47) * np.sin(np.sqrt(np.abs(x/2 + (y + 47)))) \
-           - x * np.sin(np.sqrt(np.abs(x - (y + 47))))
-
-
-def easom(x, y):
-    return -np.cos(x) * np.cos(y) * np.exp(-((x - np.pi)**2 + (y - np.pi)**2))
-
-
 # ======================================= Evaluación de individuos =======================================
-
-def f(x,y):
-    return x + y
-
 
 def evaluar_poblacion(individuos, f):
     """
@@ -153,7 +125,7 @@ def seleccion_ruleta(poblacion, probas, k):
     # Elegimos 'k' índices de 0..len(poblacion)-1 según la distribución 'probas'.
     # replace=False ⇒ sin reemplazo: un mismo individuo no puede ser seleccionado dos veces.
     # OJO: con replace=False debe cumplirse k <= len(poblacion).
-    idxs = np.random.choice(len(poblacion), size=k, p=probas, replace=False)
+    idxs = np.random.choice(len(poblacion), size=k, p=probas, replace=True)
 
     # Construimos la lista de individuos seleccionados usando los índices obtenidos.
     seleccion = [poblacion[i] for i in idxs]
@@ -163,10 +135,91 @@ def seleccion_ruleta(poblacion, probas, k):
 
 
 
+# ======================================= Cruza y Muta =======================================
+
+
+def formar_parejas(individuos_seleccionados):
+    # Copia y mezcla para evitar sesgos por orden
+    coso = list(individuos_seleccionados[:])
+    
+    random.shuffle(coso)
+
+    k = len(coso)
+    parejas = []
+
+    # Pares disjuntos: (0,1), (2,3), ...
+    for i in range(0, k - 1, 2):
+        parejas.append([coso[i], coso[i + 1]])
+
+    # Si queda uno sobrante, emparejarlo con uno aleatorio del resto
+    if k % 2 == 1:
+        sobrante = coso[-1]
+        if k > 1:
+            pareja_aleatoria = random.choice(coso[:-1])
+            parejas.append((sobrante, pareja_aleatoria))
+        else:
+            # Caso extremo: solo hay 1 individuo → lo emparejamos consigo mismo
+            parejas.append((sobrante, sobrante))
+
+    return parejas
+
+
+# --- Operadores genéticos (añadir) ---
+
+def cruce_1punto(crom_a, crom_b):
+    """Cruce de 1 punto sobre dos listas de bits del mismo largo."""
+    N = len(crom_a)
+    if N < 2:
+        return crom_a[:], crom_b[:]
+    c = random.randint(1, N-1)  # punto de corte
+    h1 = crom_a[:c] + crom_b[c:]
+    h2 = crom_b[:c] + crom_a[c:]
+    return h1, h2
+
+def mutacion_bitflip(crom, p_mut):
+    """Mutación por bit-flip independiente con prob p_mut."""
+    return [1-b if random.random() < p_mut else b for b in crom]
+
+def construir_individuo_desde_crom(crom, a1,b1,a2,b2, n, m):
+    """Parte el cromosoma en (n|m), decodifica x,y y arma el dict item."""
+    bits_izq = crom[:n]
+    bits_der = crom[n:n+m]
+    x = decodificacion(a1,b1,bits_izq,n)
+    y = decodificacion(a2,b2,bits_der,m)
+    return {"cromosoma": crom, "x": x, "y": y, "fitness": None}
+
+
+
+# ======================================= FUNCIONES A PROBAR =======================================
+
+
+def esfera(x):
+    return np.sum(np.square(x))   # x es un vector (np.array), válido para n=2 o n=5
+
+
+def bukin(x, y):
+    return 100 * np.sqrt(np.abs(y - 0.01 * x**2)) + 0.01 * np.abs(x + 10)
+
+
+def himmelblau(x, y):
+    return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
+
+
+def eggholder(x, y):
+    return -(y + 47) * np.sin(np.sqrt(np.abs(x/2 + (y + 47)))) \
+           - x * np.sin(np.sqrt(np.abs(x - (y + 47))))
+
+
+def easom(x, y):
+    return -np.cos(x) * np.cos(y) * np.exp(-((x - np.pi)**2 + (y - np.pi)**2))
+
+
+
 # ======================================= Ejecución del Programa =======================================
 
-variables_rango = [[-3.0, 12.1],
-                   [ 4.1,  5.8]]
+variables_rango = [[-15.0, -5.0],
+                   [ -3.0,  3.0]]
+
 
 a1, b1 = variables_rango[0]
 a2, b2 = variables_rango[1]
@@ -177,16 +230,52 @@ precision = 4
 valores = valores_a_representar(precision, longitudes)     # pasos por variable (aprox)
 bits = bits_necesarios(valores)                            # bits por variable
 
-M = 10
+M = 20
+
 individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
 
+f = bukin
 
 individuos_evaluados = evaluar_poblacion(individuos, f)
 
 k = len(individuos_evaluados)
 
-probas = calculo_probas(individuos_evaluados)
 
 
-aaaaa = seleccion_ruleta(individuos_evaluados, probas, k=k)
-print(aaaaa)
+G = 50  # generaciones
+p_cruce = 0.9
+p_mut   = 1.0 / suma_bits(bits)
+n = int(bits[0]); m = int(bits[-1])
+
+individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
+individuos = evaluar_poblacion(individuos, f)
+
+for gen in range(G):
+    probas = calculo_probas(individuos)
+    seleccionados, _ = seleccion_ruleta(individuos, probas, k=len(individuos))
+    parejas = formar_parejas(seleccionados)
+
+    hijos = []
+    for p in parejas:
+        c1, c2 = p[0]["cromosoma"], p[1]["cromosoma"]
+        h1, h2 = cruce_1punto(c1, c2) if random.random() < p_cruce else (c1[:], c2[:])
+        h1 = mutacion_bitflip(h1, p_mut)
+        h2 = mutacion_bitflip(h2, p_mut)
+        hijos.append(construir_individuo_desde_crom(h1, a1, b1, a2, b2, n, m))
+        hijos.append(construir_individuo_desde_crom(h2, a1, b1, a2, b2, n, m))
+
+    hijos = evaluar_poblacion(hijos, f)
+
+    # Reemplazo sin elitismo
+    if len(hijos) > len(individuos):
+        random.shuffle(hijos)
+        individuos = hijos[:len(individuos)]
+    elif len(hijos) < len(individuos):
+        faltan = len(individuos) - len(hijos)
+        individuos = hijos + random.sample(hijos, k=faltan)
+    else:
+        individuos = hijos
+
+# Al final, puedes inspeccionar el mejor encontrado (minimización)
+mejor = min(individuos, key=lambda d: d["fitness"])
+print("Mejor fitness:", mejor["fitness"], "x,y=", mejor["x"], mejor["y"])
