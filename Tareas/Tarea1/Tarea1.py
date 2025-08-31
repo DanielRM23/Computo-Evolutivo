@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 
+# random.seed(0)
+# np.random.seed(0)
 
 
 
@@ -140,28 +142,28 @@ def seleccion_ruleta(poblacion, probas, k):
 
 def formar_parejas(individuos_seleccionados):
     # Copia y mezcla para evitar sesgos por orden
-    coso = list(individuos_seleccionados[:])
-    
+    coso = list(individuos_seleccionados)
     random.shuffle(coso)
 
     k = len(coso)
     parejas = []
 
-    # Pares disjuntos: (0,1), (2,3), ...
+    # Pares disjuntos: [0,1], [2,3], ...
     for i in range(0, k - 1, 2):
-        parejas.append([coso[i], coso[i + 1]])
+        parejas.append([coso[i], coso[i + 1]])  # <-- siempre lista
 
     # Si queda uno sobrante, emparejarlo con uno aleatorio del resto
     if k % 2 == 1:
         sobrante = coso[-1]
         if k > 1:
             pareja_aleatoria = random.choice(coso[:-1])
-            parejas.append((sobrante, pareja_aleatoria))
+            parejas.append([sobrante, pareja_aleatoria])  # <-- lista, no tupla
         else:
-            # Caso extremo: solo hay 1 individuo → lo emparejamos consigo mismo
-            parejas.append((sobrante, sobrante))
+            # Caso extremo: solo hay 1 individuo → se empareja consigo mismo
+            parejas.append([sobrante, sobrante])          # <-- lista, no tupla
 
     return parejas
+
 
 
 # --- Operadores genéticos (añadir) ---
@@ -221,28 +223,18 @@ variables_rango = [[-15.0, -5.0],
                    [ -3.0,  3.0]]
 
 
+precision = 4
 a1, b1 = variables_rango[0]
 a2, b2 = variables_rango[1]
 
 longitudes = longitud(variables_rango)
-precision = 4
 
 valores = valores_a_representar(precision, longitudes)     # pasos por variable (aprox)
 bits = bits_necesarios(valores)                            # bits por variable
 
-M = 20
-
-individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
-
 f = bukin
-
-individuos_evaluados = evaluar_poblacion(individuos, f)
-
-k = len(individuos_evaluados)
-
-
-
-G = 50  # generaciones
+M = 20
+G = 150
 p_cruce = 0.9
 p_mut   = 1.0 / suma_bits(bits)
 n = int(bits[0]); m = int(bits[-1])
@@ -250,9 +242,11 @@ n = int(bits[0]); m = int(bits[-1])
 individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
 individuos = evaluar_poblacion(individuos, f)
 
+mejores = []  # mejor fitness por generación
+
 for gen in range(G):
     probas = calculo_probas(individuos)
-    seleccionados, _ = seleccion_ruleta(individuos, probas, k=len(individuos))
+    seleccionados, _ = seleccion_ruleta(individuos, probas, k=len(individuos))  
     parejas = formar_parejas(seleccionados)
 
     hijos = []
@@ -266,7 +260,7 @@ for gen in range(G):
 
     hijos = evaluar_poblacion(hijos, f)
 
-    # Reemplazo sin elitismo
+    # Reemplazo generacional SIN elitismo
     if len(hijos) > len(individuos):
         random.shuffle(hijos)
         individuos = hijos[:len(individuos)]
@@ -276,6 +270,19 @@ for gen in range(G):
     else:
         individuos = hijos
 
-# Al final, puedes inspeccionar el mejor encontrado (minimización)
+    # --- Registrar mejor de la generación ---
+    mejor_gen = min(individuos, key=lambda d: d["fitness"])
+    mejores.append(mejor_gen["fitness"])
+
+# Al final: mejor de toda la corrida
 mejor = min(individuos, key=lambda d: d["fitness"])
 print("Mejor fitness:", mejor["fitness"], "x,y=", mejor["x"], mejor["y"])
+
+# --- Gráfica de convergencia ---
+plt.figure(figsize=(15,8))
+plt.plot(mejores, marker="o", linestyle='--', alpha=0.7, color='red')
+plt.xlabel("Generación")
+plt.ylabel("Mejor fitness")
+plt.title("Convergencia del Algoritmo Genético")
+plt.grid(True)
+plt.show()
