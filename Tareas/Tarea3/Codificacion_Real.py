@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 # ======================================= FUNCIONES A PROBAR =======================================
 
 
-def esfera(x,y):
-    return x*x + y*y   # x es un vector (np.array), válido para n=2 o n=5
+def esfera(*x):
+    return np.sum(np.array(x)**2)   # x es un vector (np.array), válido para n=2 o n=5
 
 
 def bukin(x, y):
@@ -49,19 +49,38 @@ def generar_poblacion(instancia):
     decimales = instancia["precision"]
 
     rangos = np.array(instancia["variables_rango"], dtype=float)  # shape (n, 2)
-    lows  = rangos[:, 0]  # (n,)
-    highs = rangos[:, 1]  # (n,)
+    lows  = rangos[:, 0]  # (n,) #Toma toda la primera columna (valores mínimos)
+    highs = rangos[:, 1]  # (n,) Toma toda la segunda columna (valores máximos)
     
     X = np.random.uniform(lows, highs, size=(pob_size, len(rangos)))  # (pob_size, n)
     return np.round(X, decimals=decimales)
 
 
+def evaluar_fitness_2D(instancia, poblacion): # esta es para funciones en 2D
+    f = instancia["f"]
+    fitness = [f(ind[0], ind[1]) for ind in poblacion]
+    return np.array(fitness)
+
+
+def evaluar_fitness_5D(instancia, poblacion): #esta es para la esfera en 5D
+    f = instancia["f"]
+    fitness = [f(*ind) for ind in poblacion]  # desempaqueta los 5 valores
+    return np.array(fitness)
+
+
+
+# eggholder = INSTANCIAS["EGGHOLDER"]
+# pob_eggholder = generar_poblacion(eggholder)
+# poblacion_evaluada_eggholder = evaluar_fitness_5D(eggholder, pob_eggholder)
+# print(poblacion_evaluada_eggholder)
+
+
+
 
 esfera = INSTANCIAS["ESFERA 5-D"]
-print(generar_poblacion(esfera))
-
-eggholder = INSTANCIAS["EGGHOLDER"]
-print(generar_poblacion(eggholder))
+pob_esfera = generar_poblacion(esfera)
+poblacion_evaluada_esfera = evaluar_fitness_5D(esfera, pob_esfera)
+print(poblacion_evaluada_esfera)
 
 
 
