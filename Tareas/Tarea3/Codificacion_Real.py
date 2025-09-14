@@ -109,6 +109,44 @@ def cruza(instancia, padre, madre):
     return hijo1, hijo2
 
 
+# ------------ Mutación ------------
+
+def mutacion(instancia, hijo, m): 
+    
+    numero_genes = len(hijo)
+    p = 1/numero_genes # proba por cada gen 
+    
+    rangos = np.array(instancia["variables_rango"])
+    hijo_mutado = []
+
+    for i, gen in enumerate(hijo):
+        if np.random.rand() < p: #aquí muta
+            
+            low  = rangos[i,0]
+            high = rangos[i,1]
+            rango = 0.5* (high - low)
+            
+            delta = 0            
+            for j in range(0, m):
+                if np.random.rand() < 1/m: 
+                    delta += 2**(-j)
+                
+            s = np.random.choice([-1,1])
+            nuevo_gen = gen + s*rango*delta
+
+            nuevo_gen = np.clip(nuevo_gen, low, high)
+
+            hijo_mutado.append(nuevo_gen) 
+        else:
+            hijo_mutado.append(gen)
+    
+    return hijo_mutado
+
+
+
+
+
+
 
 
 
@@ -128,11 +166,11 @@ padre = torneo(poblacion_esfera, poblacion_evaluada_esfera, k=5)
 madre = torneo(poblacion_esfera, poblacion_evaluada_esfera, k=5)
 
 
-hijo = cruza(padre, madre)
+hijo = cruza(esfera, padre, madre)
 
-print(padre)
-print(madre)
+hijo_mutado = mutacion(esfera, hijo, m=4)
 print(hijo)
 
+print(hijo_mutado)
 
 
