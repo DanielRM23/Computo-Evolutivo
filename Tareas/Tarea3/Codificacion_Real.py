@@ -56,6 +56,9 @@ def generar_poblacion(instancia):
     return np.round(X, decimals=decimales)
 
 
+# ----------- Evaluar población -------------------
+# Se evalúa la población con la función objetivo
+
 def evaluar_fitness_2D(instancia, poblacion): # esta es para funciones en 2D
     f = instancia["f"]
     fitness = [f(ind[0], ind[1]) for ind in poblacion]
@@ -68,13 +71,21 @@ def evaluar_fitness_5D(instancia, poblacion): #esta es para la esfera en 5D
     return np.array(fitness)
 
 
+# ------------ Torneo -------------------
+def torneo(poblacion_evaluada, k):
+    # poblacion_evaluada: vector con los fitness de cada individuo
+    indices = np.random.choice(len(poblacion_evaluada), k, replace=False)
+    # índice con el fitness mínimo
+    minimo = np.argmin(poblacion_evaluada[indices])
+    ganador = indices[minimo]
+    return poblacion_evaluada[ganador]
+
+
 
 # eggholder = INSTANCIAS["EGGHOLDER"]
 # pob_eggholder = generar_poblacion(eggholder)
 # poblacion_evaluada_eggholder = evaluar_fitness_5D(eggholder, pob_eggholder)
 # print(poblacion_evaluada_eggholder)
-
-
 
 
 esfera = INSTANCIAS["ESFERA 5-D"]
@@ -83,4 +94,4 @@ poblacion_evaluada_esfera = evaluar_fitness_5D(esfera, pob_esfera)
 print(poblacion_evaluada_esfera)
 
 
-
+print(torneo(poblacion_evaluada_esfera, k=5))
