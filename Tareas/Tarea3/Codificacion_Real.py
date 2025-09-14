@@ -72,13 +72,43 @@ def evaluar_fitness_5D(instancia, poblacion): #esta es para la esfera en 5D
 
 
 # ------------ Torneo -------------------
-def torneo(poblacion_evaluada, k):
+def torneo(poblacion, poblacion_evaluada, k):
     # poblacion_evaluada: vector con los fitness de cada individuo
     indices = np.random.choice(len(poblacion_evaluada), k, replace=False)
     # índice con el fitness mínimo
     minimo = np.argmin(poblacion_evaluada[indices])
     ganador = indices[minimo]
-    return poblacion_evaluada[ganador]
+    return poblacion[ganador]
+
+
+# ------------ Cruza ------------
+
+def cruza(instancia, padre, madre):
+    rangos = np.array(instancia["variables_rango"])
+    lows  = rangos[:,0]
+    highs = rangos[:,1]
+
+    hijo1 = []
+    hijo2 = []
+    for (gen_padre, gen_madre) in zip(padre, madre):
+        alpha = np.random.uniform(-0.25, 1.25)  # α distinto por gen
+        beta = np.random.uniform(-0.25, 1.25) 
+
+        gen_hijo_1 = gen_padre + alpha*(gen_madre-gen_padre)
+        gen_hijo_2 = gen_madre + beta*(gen_padre-gen_madre)
+        
+        hijo1.append(gen_hijo_1)
+        hijo2.append(gen_hijo_2)
+
+    hijo1 = np.array(hijo1)
+    hijo1 = np.clip(hijo1, lows, highs)  # recortar al rango permitido
+
+    hijo2 = np.array(hijo2)
+    hijo2 = np.clip(hijo2, lows, highs)  # recortar al rango permitido
+
+    return hijo1, hijo2
+
+
 
 
 
@@ -89,9 +119,20 @@ def torneo(poblacion_evaluada, k):
 
 
 esfera = INSTANCIAS["ESFERA 5-D"]
-pob_esfera = generar_poblacion(esfera)
-poblacion_evaluada_esfera = evaluar_fitness_5D(esfera, pob_esfera)
-print(poblacion_evaluada_esfera)
+poblacion_esfera = generar_poblacion(esfera)
+poblacion_evaluada_esfera = evaluar_fitness_5D(esfera, poblacion_esfera)
+#print(poblacion_evaluada_esfera)
 
 
-print(torneo(poblacion_evaluada_esfera, k=5))
+padre = torneo(poblacion_esfera, poblacion_evaluada_esfera, k=5)
+madre = torneo(poblacion_esfera, poblacion_evaluada_esfera, k=5)
+
+
+hijo = cruza(padre, madre)
+
+print(padre)
+print(madre)
+print(hijo)
+
+
+
