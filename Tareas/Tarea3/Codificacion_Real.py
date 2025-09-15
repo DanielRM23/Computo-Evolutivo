@@ -218,8 +218,6 @@ def ciclo_algoritmo(instancia, e, m):
 
 
 
-
-
 # eggholder = INSTANCIAS["EGGHOLDER"]
 # pob_eggholder = generar_poblacion(eggholder)
 # poblacion_evaluada_eggholder = evaluar_fitness_5D(eggholder, pob_eggholder)
@@ -243,8 +241,25 @@ def ciclo_algoritmo(instancia, e, m):
 
 # print(hijo_mutado)
 
-inst = INSTANCIAS["ESFERA 5-D"]
-best_x, best_f, hist = ciclo_algoritmo(instancia=inst, e=4, m=5)
-print("Mejor x:", best_x, "\nMejor f:", best_f)
-plt.plot(hist); plt.xlabel("Generación"); plt.ylabel("Mejor fitness"); plt.show()
+instancia_esfera = INSTANCIAS["ESFERA 5-D"]
+best_x_esfera, best_f_esfera, hist_esfera = ciclo_algoritmo(instancia=instancia_esfera, e=4, m=5)
+print("Mejor x (esfera 5-D):", best_x_esfera, "\nMejor f (esfera 5-D):", best_f_esfera)
+
+instancia_eggholder = INSTANCIAS["EGGHOLDER"]
+best_x_eggholder, best_f_eggholder, hist_eggholder = ciclo_algoritmo(instancia=instancia_eggholder, e=4, m=5)
+print("Mejor x (eggholder):", best_x_eggholder, "\nMejor f (eggholder):", best_f_eggholder)
+
+plt.figure(figsize=(10, 5))
+plt.plot(hist_esfera, label="Esfera 5-D")
+plt.xlabel("Generación")
+plt.title("Evolución del mejor fitness para la Esfera 5-D")
+plt.ylabel("Mejor fitness")
+plt.show()
+
+plt.figure(figsize=(10, 5))
+plt.plot(hist_esfera, label="Eggholder")
+plt.xlabel("Generación")
+plt.title("Evolución del mejor fitness para Eggholder")
+plt.ylabel("Mejor fitness")
+plt.show()
 
