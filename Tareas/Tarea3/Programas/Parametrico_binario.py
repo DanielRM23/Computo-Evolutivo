@@ -4,9 +4,6 @@ import random
 import math
 
 
-random.seed(0)
-np.random.seed(0)
-
 
 
 def longitud(variables_rango):
@@ -265,11 +262,9 @@ def AG_Simple(variables_rango,
     a2, b2 = variables_rango[1]
 
     longitudes = longitud(variables_rango)
-
-    valores = valores_a_representar(precision, longitudes)     # pasos por variable (aprox)
-    bits = bits_necesarios(valores)                            # bits por variable
-
-    p_mut   = 1.0 / suma_bits(bits)
+    valores = valores_a_representar(precision, longitudes)
+    bits = bits_necesarios(valores)
+    p_mut = 1.0 / suma_bits(bits) if suma_bits(bits) > 0 else 0.01
     n = int(bits[0]); m = int(bits[-1])
 
     individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
@@ -289,134 +284,19 @@ def AG_Simple(variables_rango,
             h1 = mutacion(h1, p_mut)
             h2 = mutacion(h2, p_mut)
             hijos.append(construir_individuo_desde_cromosoma(h1, a1, b1, a2, b2, n, m))
-            hijos.append(construir_individuo_desde_cromosoma(h2, a1, b1, a2, b2, n, m))
+            if len(hijos) < len(individuos):
+                 hijos.append(construir_individuo_desde_cromosoma(h2, a1, b1, a2, b2, n, m))
 
         hijos = evaluar_poblacion(hijos, f)
+        individuos = hijos
 
-        # Reemplazo generacional
-        if len(hijos) > len(individuos):
-            random.shuffle(hijos)
-            individuos = hijos[:len(individuos)]
-        elif len(hijos) < len(individuos):
-            faltan = len(individuos) - len(hijos)
-            individuos = hijos + random.sample(hijos, k=faltan)
-        else:
-            individuos = hijos
-
-        # --- Registrar mejor de la generación ---
         mejor_gen = min(individuos, key=lambda d: d["fitness"])
         mejores.append(mejor_gen["fitness"])
 
-    # Al final: mejor de toda la ejecución
+    # Al final: se obtiene el mejor de toda la ejecución
     mejor = min(individuos, key=lambda d: d["fitness"])
-    print("Mejor fitness:", mejor["fitness"], "x,y=", mejor["x"], mejor["y"])
-
-    # Esta variable se usa para darle nombre a la image que se va a guardar 
-    nombre = "Función de "
-
-    if f == esfera:
-        nombre += "Esfera"
-        color = "orange"
-        # Valores a los que se quiere llegar 
-        x_real = 0
-        y_real = 0
-        minimo = 0
-
-    elif f == bukin:
-        nombre += "Bukin"
-        color = "red"
-        # Valores a los que se quiere llegar 
-        x_real = -10
-        y_real = 1
-        minimo = 0
-
-    elif f == himmelblau:
-        nombre += "Himmelblau"
-        color = "blue"
-        # Valores a los que se quiere llegar 
-        x_real = 3.584428
-        y_real = -1.848126
-        minimo = 0
-
-    elif f == eggholder:
-        nombre += "Eggholder"
-        color = "green"
-        # Valores a los que se quiere llegar 
-        x_real = 512
-        y_real = 404.2319
-        minimo = -959.6407
-
-    elif f == easom:
-        nombre += "Easom"
-        color = "purple"
-        # Valores a los que se quiere llegar 
-        x_real = np.pi
-        y_real = np.pi
-        minimo = -1
+    
+    # Se devuelven los resultados que el script principal necesita
+    return mejor['x'], mejor['y'], mejor['fitness'], mejores
 
 
-    # --- Gráficas ---
-    plt.figure(figsize=(15,8))
-    plt.plot(mejores, marker="o", linestyle='--', alpha=0.7, color=f"{color}")
-    plt.xlabel("Generación")
-    plt.ylabel("Mejor fitness")
-    plt.title(f"Algoritmo Genético Simple con: {nombre}")
-    plt.plot(mejores, marker="o", linestyle="--", alpha=0.7, color=color,
-         label=f"Mejor GA → f={mejor['fitness']:.4f}, x={mejor['x']:.4f}, y={mejor['y']:.4f}")
-    plt.axhline(minimo, color="black", linestyle=":",
-                label=f"Óptimo real → f={minimo:.4f}, x={x_real:.4f}, y={y_real:.4f}")
-    plt.legend(fontsize=12)
-    plt.grid(True)
-    plt.savefig(f"{nombre}.png")
-    plt.show()
-
-    return mejor['fitness'], mejor['x'], mejor['y']
-
-
-# ======================================= FUNCIONES A PROBAR =======================================
-
-
-def esfera(x,y):
-    return x*x + y*y   # x es un vector (np.array), válido para n=2 o n=5
-
-
-def bukin(x, y):
-    return 100 * np.sqrt(np.abs(y - 0.01 * x**2)) + 0.01 * np.abs(x + 10)
-
-
-def himmelblau(x, y):
-    return (x**2 + y - 11)**2 + (x + y**2 - 7)**2
-
-
-def eggholder(x, y):
-    return -(y + 47) * np.sin(np.sqrt(np.abs(x/2 + (y + 47)))) \
-           - x * np.sin(np.sqrt(np.abs(x - (y + 47))))
-
-
-def easom(x, y):
-    return -np.cos(x) * np.cos(y) * np.exp(-((x - np.pi)**2 + (y - np.pi)**2))
-
-
-# ============================================ EJECUCIÓN DEL PROGRAMA ============================================
-
-EJECUCIONES = {
-    "ESFERA 2-D": dict(f=esfera, variables_rango=[[-10,10],[-10,10]], precision=3, M=30, G=100, p_cruce=0.9),
-    "BUKIN":      dict(f=bukin,  variables_rango=[[-15,-5],[-3,3]],    precision=3, M=20, G=100, p_cruce=0.3),
-    "HIMMELBLAU": dict(f=himmelblau, variables_rango=[[-5,5],[-5,5]], precision=3, M=40, G=200, p_cruce=0.9),
-    "EGGHOLDER":  dict(f=eggholder,  variables_rango=[[-512,512],[-512,512]], precision=3, M=250, G= 1000, p_cruce=0.9),
-    "EASOM":      dict(f=easom,      variables_rango=[[-100,100],[-100,100]], precision=3, M=250, G=500, p_cruce=0.9),
-}
-
-#def run_AG_Simple(name):
-#     ejecucion = EJECUCIONES[name]
-#     print(f"\n=== {name} ===")
-#     return AG_Simple(ejecucion["variables_rango"], ejecucion["precision"], ejecucion["M"], ejecucion["G"], ejecucion["p_cruce"], ejecucion["f"])
-
-
-# # Ejecución de todas las funciones
-# # comentar las que no se quieren visualizar 
-# run_AG_Simple("ESFERA 2-D")
-# run_AG_Simple("BUKIN")
-# run_AG_Simple("HIMMELBLAU")
-# run_AG_Simple("EGGHOLDER")
-# run_AG_Simple("EASOM")

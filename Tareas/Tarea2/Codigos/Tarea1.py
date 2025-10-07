@@ -253,124 +253,124 @@ def construir_individuo_desde_cromosoma(cromosoma, a1,b1,a2,b2, n, m):
 # SE COMENTA ESTO PARA LA TAREA 2
 
 
-def AG_Simple(variables_rango,
-              precision,
-              M,
-              G,
-              p_cruce,
-              f
-              ):
+# def AG_Simple(variables_rango,
+#               precision,
+#               M,
+#               G,
+#               p_cruce,
+#               f
+#               ):
     
-    a1, b1 = variables_rango[0]
-    a2, b2 = variables_rango[1]
+#     a1, b1 = variables_rango[0]
+#     a2, b2 = variables_rango[1]
 
-    longitudes = longitud(variables_rango)
+#     longitudes = longitud(variables_rango)
 
-    valores = valores_a_representar(precision, longitudes)     # pasos por variable (aprox)
-    bits = bits_necesarios(valores)                            # bits por variable
+#     valores = valores_a_representar(precision, longitudes)     # pasos por variable (aprox)
+#     bits = bits_necesarios(valores)                            # bits por variable
 
-    p_mut   = 1.0 / suma_bits(bits)
-    n = int(bits[0]); m = int(bits[-1])
+#     p_mut   = 1.0 / suma_bits(bits)
+#     n = int(bits[0]); m = int(bits[-1])
 
-    individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
-    individuos = evaluar_poblacion(individuos, f)
+#     individuos = individuos_decodificados(M, a1, b1, a2, b2, bits)
+#     individuos = evaluar_poblacion(individuos, f)
 
-    mejores = []  # mejor fitness por generación
+#     mejores = []  # mejor fitness por generación
 
-    for gen in range(G):
-        probas = calculo_probas(individuos)
-        seleccionados, _ = seleccion_ruleta(individuos, probas, k=len(individuos))  
-        parejas = formar_parejas(seleccionados)
+#     for gen in range(G):
+#         probas = calculo_probas(individuos)
+#         seleccionados, _ = seleccion_ruleta(individuos, probas, k=len(individuos))  
+#         parejas = formar_parejas(seleccionados)
 
-        hijos = []
-        for p in parejas:
-            c1, c2 = p[0]["cromosoma"], p[1]["cromosoma"]
-            h1, h2 = cruce_1punto(c1, c2) if random.random() < p_cruce else (c1[:], c2[:])
-            h1 = mutacion(h1, p_mut)
-            h2 = mutacion(h2, p_mut)
-            hijos.append(construir_individuo_desde_cromosoma(h1, a1, b1, a2, b2, n, m))
-            hijos.append(construir_individuo_desde_cromosoma(h2, a1, b1, a2, b2, n, m))
+#         hijos = []
+#         for p in parejas:
+#             c1, c2 = p[0]["cromosoma"], p[1]["cromosoma"]
+#             h1, h2 = cruce_1punto(c1, c2) if random.random() < p_cruce else (c1[:], c2[:])
+#             h1 = mutacion(h1, p_mut)
+#             h2 = mutacion(h2, p_mut)
+#             hijos.append(construir_individuo_desde_cromosoma(h1, a1, b1, a2, b2, n, m))
+#             hijos.append(construir_individuo_desde_cromosoma(h2, a1, b1, a2, b2, n, m))
 
-        hijos = evaluar_poblacion(hijos, f)
+#         hijos = evaluar_poblacion(hijos, f)
 
-        # Reemplazo generacional
-        if len(hijos) > len(individuos):
-            random.shuffle(hijos)
-            individuos = hijos[:len(individuos)]
-        elif len(hijos) < len(individuos):
-            faltan = len(individuos) - len(hijos)
-            individuos = hijos + random.sample(hijos, k=faltan)
-        else:
-            individuos = hijos
+#         # Reemplazo generacional
+#         if len(hijos) > len(individuos):
+#             random.shuffle(hijos)
+#             individuos = hijos[:len(individuos)]
+#         elif len(hijos) < len(individuos):
+#             faltan = len(individuos) - len(hijos)
+#             individuos = hijos + random.sample(hijos, k=faltan)
+#         else:
+#             individuos = hijos
 
-        # --- Registrar mejor de la generación ---
-        mejor_gen = min(individuos, key=lambda d: d["fitness"])
-        mejores.append(mejor_gen["fitness"])
+#         # --- Registrar mejor de la generación ---
+#         mejor_gen = min(individuos, key=lambda d: d["fitness"])
+#         mejores.append(mejor_gen["fitness"])
 
-    # Al final: mejor de toda la ejecución
-    mejor = min(individuos, key=lambda d: d["fitness"])
-    print("Mejor fitness:", mejor["fitness"], "x,y=", mejor["x"], mejor["y"])
+#     # Al final: mejor de toda la ejecución
+#     mejor = min(individuos, key=lambda d: d["fitness"])
+#     print("Mejor fitness:", mejor["fitness"], "x,y=", mejor["x"], mejor["y"])
 
-    # Esta variable se usa para darle nombre a la image que se va a guardar 
-    nombre = "Función de "
+#     # Esta variable se usa para darle nombre a la image que se va a guardar 
+#     nombre = "Función de "
 
-    if f == esfera:
-        nombre += "Esfera"
-        color = "orange"
-        # Valores a los que se quiere llegar 
-        x_real = 0
-        y_real = 0
-        minimo = 0
+#     if f == esfera:
+#         nombre += "Esfera"
+#         color = "orange"
+#         # Valores a los que se quiere llegar 
+#         x_real = 0
+#         y_real = 0
+#         minimo = 0
 
-    elif f == bukin:
-        nombre += "Bukin"
-        color = "red"
-        # Valores a los que se quiere llegar 
-        x_real = -10
-        y_real = 1
-        minimo = 0
+#     elif f == bukin:
+#         nombre += "Bukin"
+#         color = "red"
+#         # Valores a los que se quiere llegar 
+#         x_real = -10
+#         y_real = 1
+#         minimo = 0
 
-    elif f == himmelblau:
-        nombre += "Himmelblau"
-        color = "blue"
-        # Valores a los que se quiere llegar 
-        x_real = 3.584428
-        y_real = -1.848126
-        minimo = 0
+#     elif f == himmelblau:
+#         nombre += "Himmelblau"
+#         color = "blue"
+#         # Valores a los que se quiere llegar 
+#         x_real = 3.584428
+#         y_real = -1.848126
+#         minimo = 0
 
-    elif f == eggholder:
-        nombre += "Eggholder"
-        color = "green"
-        # Valores a los que se quiere llegar 
-        x_real = 512
-        y_real = 404.2319
-        minimo = -959.6407
+#     elif f == eggholder:
+#         nombre += "Eggholder"
+#         color = "green"
+#         # Valores a los que se quiere llegar 
+#         x_real = 512
+#         y_real = 404.2319
+#         minimo = -959.6407
 
-    elif f == easom:
-        nombre += "Easom"
-        color = "purple"
-        # Valores a los que se quiere llegar 
-        x_real = np.pi
-        y_real = np.pi
-        minimo = -1
+#     elif f == easom:
+#         nombre += "Easom"
+#         color = "purple"
+#         # Valores a los que se quiere llegar 
+#         x_real = np.pi
+#         y_real = np.pi
+#         minimo = -1
 
 
-    # --- Gráficas ---
-    plt.figure(figsize=(15,8))
-    plt.plot(mejores, marker="o", linestyle='--', alpha=0.7, color=f"{color}")
-    plt.xlabel("Generación")
-    plt.ylabel("Mejor fitness")
-    plt.title(f"Algoritmo Genético Simple con: {nombre}")
-    plt.plot(mejores, marker="o", linestyle="--", alpha=0.7, color=color,
-         label=f"Mejor GA → f={mejor['fitness']:.4f}, x={mejor['x']:.4f}, y={mejor['y']:.4f}")
-    plt.axhline(minimo, color="black", linestyle=":",
-                label=f"Óptimo real → f={minimo:.4f}, x={x_real:.4f}, y={y_real:.4f}")
-    plt.legend(fontsize=12)
-    plt.grid(True)
-    plt.savefig(f"{nombre}.png")
-    plt.show()
+#     # --- Gráficas ---
+#     plt.figure(figsize=(15,8))
+#     plt.plot(mejores, marker="o", linestyle='--', alpha=0.7, color=f"{color}")
+#     plt.xlabel("Generación")
+#     plt.ylabel("Mejor fitness")
+#     plt.title(f"Algoritmo Genético Simple con: {nombre}")
+#     plt.plot(mejores, marker="o", linestyle="--", alpha=0.7, color=color,
+#          label=f"Mejor GA → f={mejor['fitness']:.4f}, x={mejor['x']:.4f}, y={mejor['y']:.4f}")
+#     plt.axhline(minimo, color="black", linestyle=":",
+#                 label=f"Óptimo real → f={minimo:.4f}, x={x_real:.4f}, y={y_real:.4f}")
+#     plt.legend(fontsize=12)
+#     plt.grid(True)
+#     plt.savefig(f"{nombre}.png")
+#     plt.show()
 
-    return mejor['fitness'], mejor['x'], mejor['y']
+#     return mejor['fitness'], mejor['x'], mejor['y']
 
 
 # ======================================= FUNCIONES A PROBAR =======================================
