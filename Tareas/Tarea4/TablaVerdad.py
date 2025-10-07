@@ -1,8 +1,6 @@
 import copy
 import random
 
-
-
 class Nodo: 
     def __init__(self, valor, hijos): 
         """Constructor de la clase Nodo.
