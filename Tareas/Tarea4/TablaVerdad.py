@@ -171,13 +171,12 @@ def _obtener_nodos_recursivo(nodo_actual, lista_nodos):
             _obtener_nodos_recursivo(hijo, lista_nodos)
 
 
+
 def cruzamiento(padre1, padre2):
     """
-    Crea dos hijos combinando los árboles de dos padres.
+    Crea dos hijos combinando los árboles de dos padres mediante el
+    intercambio de subárboles.
     """
-    # Se recomienda trabajar con copias para no alterar a los padres originales
-    # Entonces, así  lo hago 
-    # Recordemos que para crear un individuo necesitamos una raiz
     hijo1 = Individuo(copy.deepcopy(padre1.nodo_raiz))
     hijo2 = Individuo(copy.deepcopy(padre2.nodo_raiz))
 
@@ -186,18 +185,33 @@ def cruzamiento(padre1, padre2):
     nodos_hijo2 = _obtener_nodos(hijo2.nodo_raiz)
 
     # Elegimos un nodo al azar de cada árbol para el intercambio
-    nodo_a_intercambiar1 = random.choice(nodos_hijo1)
-    nodo_a_intercambiar2 = random.choice(nodos_hijo2)
+    nodo_a_reemplazar_en_hijo1 = random.choice(nodos_hijo1)
+    subarbol_de_hijo2 = random.choice(nodos_hijo2)
 
-    # Intercambiamos los valores y los hijos de los nodos seleccionados
-    nodo_a_intercambiar1.valor, nodo_a_intercambiar2.valor = \
-        nodo_a_intercambiar2.valor, nodo_a_intercambiar1.valor
-    
-    nodo_a_intercambiar1.hijos, nodo_a_intercambiar2.hijos = \
-        nodo_a_intercambiar2.hijos, nodo_a_intercambiar1.hijos
+    # Guardamos una copia del subárbol que vamos a reemplazar en el hijo1
+    subarbol_original_de_hijo1 = copy.deepcopy(nodo_a_reemplazar_en_hijo1)
+
+    # Reemplazamos el nodo en hijo1 con el subárbol de hijo2
+    # Esto es conceptualmente correcto: se reemplaza todo el subárbol
+    nodo_a_reemplazar_en_hijo1.valor = subarbol_de_hijo2.valor
+    nodo_a_reemplazar_en_hijo1.hijos = subarbol_de_hijo2.hijos
+
+    # Ahora, encontramos un punto de cruce en el hijo2 y lo reemplazamos
+    # con el subárbol que guardamos del hijo1
+    nodo_a_reemplazar_en_hijo2 = random.choice(nodos_hijo2)
+    nodo_a_reemplazar_en_hijo2.valor = subarbol_original_de_hijo1.valor
+    nodo_a_reemplazar_en_hijo2.hijos = subarbol_original_de_hijo1.hijos
 
     return hijo1, hijo2
 
+
+def calcular_profundidad(nodo_raiz):
+    """Calcula la profundidad de un árbol de forma recursiva."""
+    if not nodo_raiz or not nodo_raiz.hijos:
+        return 0
+    else:
+        return 1 + max(calcular_profundidad(hijo) for hijo in nodo_raiz.hijos)
+    
 
 def mutacion(individuo, profundidad_maxima, conjunto_funciones):
     """
@@ -225,16 +239,15 @@ def mutacion(individuo, profundidad_maxima, conjunto_funciones):
 if __name__ == "__main__":
     
     # --- PASO 1: Configuración del Algoritmo ---
-    TAMAÑO_POBLACION = 150
-    NUM_GENERACIONES = 100
+    TAMAÑO_POBLACION = 300      # Aumentado para mayor diversidad
+    NUM_GENERACIONES = 300
     PROB_CRUZAMIENTO = 0.9
-    PROB_MUTACION = 0.1
-    TAMAÑO_TORNEO = 3
-    PROFUNDIDAD_MAXIMA = 4
-    ELITISMO = True # Guardar al mejor individuo de cada generación
+    PROB_MUTACION = 0.15        # Ligeramente aumentado para salir de óptimos locales
+    TAMAÑO_TORNEO = 3           # Reducido para disminuir presión de selección
+    PROFUNDIDAD_MAXIMA = 8
+    ELITISMO = True
     TERMINALES = ['A', 'B', 'C']
 
-    # Esta es la tabla de verdad que se quiere resolver
     TABLA_VERDAD = [
         {'A': 0, 'B': 0, 'C': 0, 'S': 1},
         {'A': 0, 'B': 0, 'C': 1, 'S': 0},
@@ -264,66 +277,72 @@ if __name__ == "__main__":
         print(f"INICIANDO {exp['nombre']}")
         print(f"=================================================")
 
-        # --- PASO 4: Inicialización de la Población ---
         poblacion = []
         for _ in range(TAMAÑO_POBLACION):
             nodo_raiz = crear_arbol_aleatorio(PROFUNDIDAD_MAXIMA, 0, exp['funciones'])
             poblacion.append(Individuo(nodo_raiz))
 
-        mejor_solucion_global = None # de momento no tengo una mejor solución 
+        mejor_solucion_global = None
 
-        # --- PASO 5: Bucle de Generaciones ---
         for gen in range(NUM_GENERACIONES):
-            # a. Evaluación
             for individuo in poblacion:
                 calcular_fitness(individuo)
 
-            # b. Reporte y Verificación
             mejor_de_la_generacion = max(poblacion, key=lambda ind: ind.fitness)
             if mejor_solucion_global is None or mejor_de_la_generacion.fitness > mejor_solucion_global.fitness:
-                # Trabajo con copias, pa no equivocarse
                 mejor_solucion_global = copy.deepcopy(mejor_de_la_generacion) 
 
             print(f"Generación {gen+1}/{NUM_GENERACIONES} | Mejor Fitness: {mejor_de_la_generacion.fitness}/8")
 
             if mejor_de_la_generacion.fitness == 8:
-                print(f"\n Bibaaaaaaa ¡SOLUCIÓN ENCONTRADA EN LA GENERACIÓN {gen+1}!")
+                print(f"\n¡SOLUCIÓN ENCONTRADA EN LA GENERACIÓN {gen+1}!")
                 break
 
-            # c. Creación de la Nueva Generación
+            # --- BUCLE DE CREACIÓN DE POBLACIÓN CORREGIDO ---
             nueva_poblacion = []
 
-            # Elitismo: el mejor individuo pasa directamente a la siguiente generación
             if ELITISMO:
                 nueva_poblacion.append(copy.deepcopy(mejor_de_la_generacion))
             
             while len(nueva_poblacion) < TAMAÑO_POBLACION:
-                # Selección
                 padre1 = seleccion_por_torneo(poblacion, TAMAÑO_TORNEO)
                 padre2 = seleccion_por_torneo(poblacion, TAMAÑO_TORNEO)
                 
-                # Cruzamiento
                 if random.random() < PROB_CRUZAMIENTO:
                     hijo1, hijo2 = cruzamiento(padre1, padre2)
                 else:
-                    hijo1, hijo2 = padre1, padre2
+                    hijo1, hijo2 = copy.deepcopy(padre1), copy.deepcopy(padre2)
                 
-                # Mutación
-                nueva_poblacion.append(mutacion(hijo1, PROFUNDIDAD_MAXIMA, exp['funciones']))
-                if len(nueva_poblacion) < TAMAÑO_POBLACION:
-                    nueva_poblacion.append(mutacion(hijo2, PROFUNDIDAD_MAXIMA, exp['funciones']))
+                # Mutación aplicada con probabilidad
+                if random.random() < PROB_MUTACION:
+                    hijo1 = mutacion(hijo1, PROFUNDIDAD_MAXIMA, exp['funciones'])
+                
+                if random.random() < PROB_MUTACION:
+                    hijo2 = mutacion(hijo2, PROFUNDIDAD_MAXIMA, exp['funciones'])
+                
+                # Control de profundidad y adición a la nueva población
+                if calcular_profundidad(hijo1.nodo_raiz) <= PROFUNDIDAD_MAXIMA + 2:
+                    nueva_poblacion.append(hijo1)
+                else:
+                    nueva_poblacion.append(copy.deepcopy(padre1))
 
-            # d. Reemplazo
+                if len(nueva_poblacion) < TAMAÑO_POBLACION:
+                    if calcular_profundidad(hijo2.nodo_raiz) <= PROFUNDIDAD_MAXIMA + 2:
+                        nueva_poblacion.append(hijo2)
+                    else:
+                        nueva_poblacion.append(copy.deepcopy(padre2))
+            
             poblacion = nueva_poblacion
         
         # --- PASO 6: Resultados Finales del Experimento ---
         print("\n--- RESULTADO FINAL DEL EXPERIMENTO ---")
-        if mejor_solucion_global.fitness == 8:
+        if mejor_solucion_global and mejor_solucion_global.fitness == 8:
             print(f"Solución perfecta encontrada:")
             print(f"Fórmula: {mejor_solucion_global}")
             print(f"Fitness: {mejor_solucion_global.fitness}/8")
         else:
             print(f"No se encontró una solución perfecta en {NUM_GENERACIONES} generaciones.")
-            print(f"La mejor fórmula encontrada fue:")
-            print(f"Fórmula: {mejor_solucion_global}")
-            print(f"Fitness: {mejor_solucion_global.fitness}/8")
+            if mejor_solucion_global:
+                print(f"La mejor fórmula encontrada fue:")
+                print(f"Fórmula: {mejor_solucion_global}")
+                print(f"Fitness: {mejor_solucion_global.fitness}/8")
